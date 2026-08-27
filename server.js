@@ -7,7 +7,11 @@ const cors = require('cors');
 const app = express();
 app.use(express.json());
 app.use(cors());
-app.use(express.static('public')); // <-- Yeh line add kar di hai taaki frontend direct load ho
+const path = require('path');
+
+// Is line se replace kar do:
+app.use(express.static(path.join(__dirname, 'public')));
+// <-- Yeh line add kar di hai taaki frontend direct load ho
 
 // Initialize Firebase Admin (Using ADC - Application Default Credentials)
 admin.initializeApp();
