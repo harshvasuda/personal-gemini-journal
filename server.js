@@ -7,6 +7,7 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
+// Serve static frontend files
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Firebase Init
@@ -27,9 +28,9 @@ app.post('/api/journal', async (req, res) => {
 
         const promptText = `Analyze this journal entry in English. Provide an empathetic and structured reflection: "${content}"`;
 
-        // Direct standard v1beta call using gemini-2.0-flash
+        // Direct v1beta endpoint with gemini-3.6-flash
         const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`,
             {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
