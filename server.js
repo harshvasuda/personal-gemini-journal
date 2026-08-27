@@ -1,5 +1,4 @@
 const express = require('express');
-const { SecretManagerServiceClient } = require('@google-cloud/secret-manager');
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const admin = require('firebase-admin');
 const cors = require('cors');
@@ -56,7 +55,7 @@ app.post('/api/journal', async (req, res) => {
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-        const prompt = `Analyze this journal entry and provide a thoughtful, empathetic, and structured reflection or summary: "${content}"`;
+        const prompt = `Analyze this journal entry in pure English. Provide a thoughtful, empathetic, well-structured reflection and actionable insights: "${content}"`;
         const result = await model.generateContent(prompt);
         const analysis = result.response.text();
 
@@ -81,7 +80,6 @@ app.post('/api/chat', authenticate, async (req, res) => {
         const result = await chat.sendMessage(message);
         const response = await result.response.text();
 
-        // SECURE DIRECTIVE 3: Isolated Data Storage
         const messageRef = db.collection('users').doc(req.user.uid)
             .collection('sessions').doc(sessionId)
             .collection('messages');
@@ -105,7 +103,7 @@ app.post('/api/chat', authenticate, async (req, res) => {
 });
 
 /**
- * UNIQUE FEATURE: AI Mood Summarization & Analytics (Authenticated)
+ * AI Mood Summarization & Analytics (Authenticated)
  */
 app.get('/api/analytics/mood-summary', authenticate, async (req, res) => {
     try {
@@ -113,13 +111,12 @@ app.get('/api/analytics/mood-summary', authenticate, async (req, res) => {
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-        // Fetch last 10 session logs
         const snapshot = await db.collection('users').doc(req.user.uid)
             .collection('sessions').orderBy('timestamp', 'desc').limit(10).get();
 
         const logs = snapshot.docs.map(doc => doc.data().lastMessage).join(". ");
 
-        const prompt = `Analyze the following journal entries and provide a JSON response with: 
+        const prompt = `Analyze the following journal entries in English and provide a JSON response with: 
         1. dominant_mood (string) 
         2. mood_score (1-10) 
         3. weekly_summary (brief paragraph). Entries: ${logs}`;
@@ -135,11 +132,15 @@ app.get('/api/analytics/mood-summary', authenticate, async (req, res) => {
 });
 
 /**
- * FALLBACK ROUTE: Serve index.html for any unknown routes
+ * Explicit Root and Fallback Routes
  */
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => console.log(`Secure Server running on port ${PORT}`));
+app.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT}`));
