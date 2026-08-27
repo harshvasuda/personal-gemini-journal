@@ -2,13 +2,16 @@ const express = require('express');
 const admin = require('firebase-admin');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 app.use(express.json());
 app.use(cors());
 
-// Serve static frontend files
-app.use(express.static(path.join(__dirname, 'public')));
+// Path resolver for static files
+const publicDir = path.resolve(__dirname, 'public');
+app.use(express.static(publicDir));
+app.use(express.static(path.resolve(__dirname)));
 
 // Firebase Admin Init
 if (!admin.apps.length) {
@@ -118,13 +121,22 @@ app.post('/api/journal', authenticateUser, async (req, res) => {
     }
 });
 
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
+// Robust HTML serving helper
+function serveIndex(res) {
+    const publicIndex = path.join(publicDir, 'index.html');
+    const rootIndex = path.join(__dirname, 'index.html');
 
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
+    if (fs.existsSync(publicIndex)) {
+        return res.sendFile(publicIndex);
+    } else if (fs.existsSync(rootIndex)) {
+        return res.sendFile(rootIndex);
+    } else {
+        return res.status(404).send('<h2>index.html file not found in public/ or root directory.</h2>');
+    }
+}
+
+app.get('/', (req, res) => serveIndex(res));
+app.get('*', (req, res) => serveIndex(res));
 
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT}`));
