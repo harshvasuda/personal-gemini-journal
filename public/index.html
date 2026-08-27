@@ -9,6 +9,10 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
+    <!-- Firebase App & Auth SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+
     <style>
         :root {
             --primary: #4f46e5;
@@ -47,6 +51,48 @@
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.03);
             border: 1px solid var(--border);
             transition: all 0.3s ease;
+        }
+
+        .auth-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .auth-btn {
+            background-color: var(--primary);
+            color: #ffffff;
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .auth-btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .user-info {
+            display: none;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .logout-btn {
+            background: none;
+            border: none;
+            color: #ef4444;
+            cursor: pointer;
+            font-size: 0.8rem;
+            text-decoration: underline;
         }
 
         .header {
@@ -191,7 +237,6 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Mobile Optimization */
         @media (max-width: 640px) {
             body {
                 padding: 1rem;
@@ -220,6 +265,18 @@
 <body>
 
     <div class="journal-card">
+        <!-- Secure Auth Header -->
+        <div class="auth-bar">
+            <span class="badge" style="margin-bottom:0;">Authenticated Vault</span>
+            <div id="authSection">
+                <button id="loginBtn" class="auth-btn" onclick="signIn()">Sign in with Google</button>
+                <div id="userInfo" class="user-info">
+                    <span id="userEmail"></span>
+                    <button class="logout-btn" onclick="signOut()">Sign Out</button>
+                </div>
+            </div>
+        </div>
+
         <div class="header">
             <span class="badge">AI-Powered</span>
             <h1>Daily Reflection Journal</h1>
@@ -230,7 +287,7 @@
             <textarea id="journalInput" placeholder="What is on your mind today? Write freely..."></textarea>
             <button class="btn-submit" id="submitBtn" onclick="submitJournal()">
                 <div class="spinner" id="spinner"></div>
-                <span id="btnText">Analyze Entry</span>
+                <span id="btnText">Analyze & Save</span>
             </button>
         </div>
 
@@ -241,7 +298,56 @@
     </div>
 
     <script>
+        // REPLACE WITH YOUR FIREBASE WEB APP CONFIG
+        const firebaseConfig = {
+            apiKey: "YOUR_FIREBASE_API_KEY",
+            authDomain: "personal-gemini-journal-5b10e.firebaseapp.com",
+            projectId: "personal-gemini-journal-5b10e",
+            storageBucket: "personal-gemini-journal-5b10e.appspot.com",
+            messagingSenderId: "367341257404",
+            appId: "YOUR_APP_ID"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        let currentUser = null;
+
+        auth.onAuthStateChanged(user => {
+            currentUser = user;
+            const loginBtn = document.getElementById('loginBtn');
+            const userInfo = document.getElementById('userInfo');
+            const userEmail = document.getElementById('userEmail');
+
+            if (user) {
+                loginBtn.style.display = 'none';
+                userInfo.style.display = 'flex';
+                userEmail.innerText = user.displayName || user.email;
+            } else {
+                loginBtn.style.display = 'block';
+                userInfo.style.display = 'none';
+            }
+        });
+
+        async function signIn() {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            try {
+                await auth.signInWithPopup(provider);
+            } catch (error) {
+                alert('Sign-in Error: ' + error.message);
+            }
+        }
+
+        async function signOut() {
+            await auth.signOut();
+            document.getElementById('responseContainer').style.display = 'none';
+        }
+
         async function submitJournal() {
+            if (!currentUser) {
+                alert('Please sign in with Google to analyze and save your journal entry.');
+                return;
+            }
+
             const input = document.getElementById('journalInput');
             const output = document.getElementById('responseOutput');
             const container = document.getElementById('responseContainer');
@@ -260,13 +366,15 @@
             btnText.innerText = 'Analyzing...';
             spinner.style.display = 'block';
             container.style.display = 'block';
-            output.innerText = 'Reflecting on your entry, please wait a moment...';
+            output.innerText = 'Reflecting on your entry and saving to secure cloud vault...';
 
             try {
+                const token = await currentUser.getIdToken();
                 const response = await fetch('/api/journal', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
                     },
                     body: JSON.stringify({ content: text })
                 });
@@ -282,9 +390,8 @@
                 output.innerText = 'Network Error: Unable to reach the server. Please check your connection.';
                 console.error(error);
             } finally {
-                // Reset loading state
                 submitBtn.disabled = false;
-                btnText.innerText = 'Analyze Entry';
+                btnText.innerText = 'Analyze & Save';
                 spinner.style.display = 'none';
             }
         }
