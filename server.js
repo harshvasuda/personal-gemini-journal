@@ -26,9 +26,9 @@ app.post('/api/journal', async (req, res) => {
 
         const promptText = `Analyze this journal entry in pure English. Provide a thoughtful, empathetic, and structured reflection: "${content}"`;
 
-        // Standard v1beta endpoint with gemini-1.5-flash
+        // Updated to v1 endpoint
         const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+            `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
             {
                 method: 'POST',
                 headers: {
