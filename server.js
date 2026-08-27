@@ -9,6 +9,7 @@ app.use(cors());
 
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Firebase Init
 admin.initializeApp();
 const db = admin.firestore();
 
@@ -24,16 +25,14 @@ app.post('/api/journal', async (req, res) => {
             return res.status(500).json({ error: "GEMINI_API_KEY is not configured on server" });
         }
 
-        const promptText = `Analyze this journal entry in pure English. Provide a thoughtful, empathetic, and structured reflection: "${content}"`;
+        const promptText = `Analyze this journal entry in English. Provide an empathetic and structured reflection: "${content}"`;
 
-        // Updated to v1 endpoint
+        // Direct standard v1beta call using gemini-2.0-flash
         const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
             {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     contents: [{
                         parts: [{ text: promptText }]
@@ -51,7 +50,7 @@ app.post('/api/journal', async (req, res) => {
             });
         }
 
-        const analysis = data.candidates?.[0]?.content?.parts?.[0]?.text || "No analysis generated.";
+        const analysis = data.candidates?.[0]?.content?.parts?.[0]?.text || "No reflection generated.";
         res.json({ analysis });
 
     } catch (error) {
