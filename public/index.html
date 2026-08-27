@@ -298,14 +298,13 @@
     </div>
 
     <script>
-        // REPLACE WITH YOUR FIREBASE WEB APP CONFIG
         const firebaseConfig = {
-            apiKey: "YOUR_FIREBASE_API_KEY",
+            apiKey: "AIzaSyDummyKey_ReplaceWithYourKey",
             authDomain: "personal-gemini-journal-5b10e.firebaseapp.com",
             projectId: "personal-gemini-journal-5b10e",
             storageBucket: "personal-gemini-journal-5b10e.appspot.com",
             messagingSenderId: "367341257404",
-            appId: "YOUR_APP_ID"
+            appId: "1:367341257404:web:yourAppId"
         };
 
         firebase.initializeApp(firebaseConfig);
@@ -361,7 +360,6 @@
                 return;
             }
 
-            // Set loading state
             submitBtn.disabled = true;
             btnText.innerText = 'Analyzing...';
             spinner.style.display = 'block';
