@@ -7,7 +7,7 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// Render provides PORT dynamically (default to 8080 or 10000)
+// Render dynamic port
 const PORT = process.env.PORT || 8080;
 
 // Safe Firebase Admin SDK
@@ -22,10 +22,14 @@ try {
     }
     db = admin.firestore();
 } catch (e) {
-    console.warn('Firebase init:', e.message);
+    console.warn('Firebase notice:', e.message);
 }
 
-// User Authentication Middleware
+// 1. Static Files Middleware (Mounted first)
+const publicDirectory = path.join(__dirname, 'public');
+app.use(express.static(publicDirectory));
+
+// 2. Authentication Middleware
 async function authenticateUser(req, res, next) {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -45,17 +49,17 @@ async function authenticateUser(req, res, next) {
     next();
 }
 
-// Health Check route for Render
+// 3. Health Check
 app.get('/health', (req, res) => res.status(200).send('OK'));
 
-// AI Journal Route
+// 4. API Route: Multi-turn AI Reflection
 app.post('/api/journal', authenticateUser, async (req, res) => {
     try {
         const { content } = req.body;
         if (!content) return res.status(400).json({ error: 'Content is required' });
 
         const apiKey = process.env.GEMINI_API_KEY;
-        if (!apiKey) return res.status(500).json({ error: 'GEMINI_API_KEY missing' });
+        if (!apiKey) return res.status(500).json({ error: 'GEMINI_API_KEY missing on server' });
 
         const prompt = `Analyze this journal entry in English. Provide an empathetic and structured reflection:\n\n"${content}"`;
         const response = await fetch(
@@ -66,6 +70,7 @@ app.post('/api/journal', authenticateUser, async (req, res) => {
                 body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
             }
         );
+
         const data = await response.json();
         if (!response.ok) {
             return res.status(response.status).json({ error: data.error?.message || 'Gemini error' });
@@ -88,27 +93,19 @@ app.post('/api/journal', authenticateUser, async (req, res) => {
     }
 });
 
-// Guaranteed HTML Delivery on root and every other route
-const serveIndexHtml = (req, res) => {
-    const candidates = [
-        path.join(__dirname, 'public', 'index.html'),
-        path.join(__dirname, 'index.html'),
-        path.resolve('public/index.html')
-    ];
+// 5. Guaranteed HTML Delivery (Zero-fail fallback)
+app.get('*', (req, res) => {
+    const publicFile = path.join(__dirname, 'public', 'index.html');
+    const rootFile = path.join(__dirname, 'index.html');
 
-    for (const p of candidates) {
-        if (fs.existsSync(p)) {
-            return res.sendFile(p);
-        }
+    if (fs.existsSync(publicFile)) {
+        return res.sendFile(publicFile);
+    } else if (fs.existsSync(rootFile)) {
+        return res.sendFile(rootFile);
+    } else {
+        return res.status(200).send(`<!DOCTYPE html><html><head><title>Personal AI Journal</title><script src="https://cdn.tailwindcss.com"></script></head><body class="bg-slate-100 flex items-center justify-center min-h-screen p-4"><div class="bg-white p-8 rounded-2xl shadow max-w-lg w-full text-center"><h1 class="text-xl font-bold mb-2">Personal Gemini Journal</h1><p class="text-slate-500 text-sm">Server is running.</p></div></body></html>`);
     }
-
-    // Fallback: Inline UI if file is somehow missing from container
-    res.type('html').send(`<!DOCTYPE html><html><head><title>Personal AI Journal</title><script src="https://cdn.tailwindcss.com"></script></head><body class="bg-slate-100 flex items-center justify-center min-h-screen p-4"><div class="bg-white p-8 rounded-2xl shadow max-w-lg w-full text-center"><h1 class="text-xl font-bold mb-2">Personal Gemini Journal</h1><p class="text-slate-500 text-sm">Server is Live and Connected.</p></div></body></html>`);
-};
-
-app.get('/', serveIndexHtml);
-app.use(express.static(path.join(__dirname, 'public')));
-app.get('*', serveIndexHtml);
+});
 
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server actively running on port ${PORT}`);
