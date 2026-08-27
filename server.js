@@ -7,11 +7,10 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// Serve static assets
-app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.static(__dirname));
+// Render provides PORT dynamically (default to 8080 or 10000)
+const PORT = process.env.PORT || 8080;
 
-// Safe Firebase Admin Init
+// Safe Firebase Admin SDK
 let admin = null;
 let db = null;
 try {
@@ -22,85 +21,57 @@ try {
         });
     }
     db = admin.firestore();
-    console.log('Firebase initialized successfully.');
 } catch (e) {
-    console.warn('Firebase Admin SDK notice:', e.message);
+    console.warn('Firebase init:', e.message);
 }
 
-// Token Verification Middleware
+// User Authentication Middleware
 async function authenticateUser(req, res, next) {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({ error: 'Unauthorized: No token provided' });
+        return res.status(401).json({ error: 'Unauthorized: No token' });
     }
     const idToken = authHeader.split('Bearer ')[1];
-    
     if (admin) {
         try {
-            const decodedToken = await admin.auth().verifyIdToken(idToken);
-            req.user = decodedToken;
+            const decoded = await admin.auth().verifyIdToken(idToken);
+            req.user = decoded;
             return next();
-        } catch (err) {
-            console.warn('Token verification fallback:', err.message);
+        } catch (e) {
+            console.warn('Token verify fallback');
         }
     }
     req.user = { uid: 'auth_user_' + Buffer.from(idToken.slice(0, 15)).toString('hex') };
     next();
 }
 
-// 1. Fetch User Journals Route
-app.get('/api/journals', authenticateUser, async (req, res) => {
-    try {
-        if (!db) return res.json({ journals: [] });
-        const snapshot = await db.collection('users')
-            .doc(req.user.uid)
-            .collection('journals')
-            .orderBy('timestamp', 'desc')
-            .limit(20)
-            .get();
+// Health Check route for Render
+app.get('/health', (req, res) => res.status(200).send('OK'));
 
-        const journals = [];
-        snapshot.forEach(doc => journals.push({ id: doc.id, ...doc.data() }));
-        res.json({ journals });
-    } catch (error) {
-        console.error('Fetch error:', error.message);
-        res.json({ journals: [] });
-    }
-});
-
-// 2. Multi-turn AI Reflection Route
+// AI Journal Route
 app.post('/api/journal', authenticateUser, async (req, res) => {
     try {
         const { content } = req.body;
         if (!content) return res.status(400).json({ error: 'Content is required' });
 
         const apiKey = process.env.GEMINI_API_KEY;
-        if (!apiKey) {
-            return res.status(500).json({ error: 'GEMINI_API_KEY environment variable is missing on server' });
-        }
+        if (!apiKey) return res.status(500).json({ error: 'GEMINI_API_KEY missing' });
 
-        const promptText = `Analyze this journal entry in English. Provide an empathetic and structured reflection:\n\n"${content}"`;
-
+        const prompt = `Analyze this journal entry in English. Provide an empathetic and structured reflection:\n\n"${content}"`;
         const response = await fetch(
             `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`,
             {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: promptText }] }]
-                })
+                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
             }
         );
-
         const data = await response.json();
         if (!response.ok) {
-            console.error('Gemini API Error:', data);
-            return res.status(response.status).json({
-                error: data.error?.message || 'Gemini API Error'
-            });
+            return res.status(response.status).json({ error: data.error?.message || 'Gemini error' });
         }
 
-        const analysis = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Reflection generated successfully.';
+        const analysis = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Reflection generated.';
 
         if (db) {
             await db.collection('users').doc(req.user.uid).collection('journals').add({
@@ -112,25 +83,33 @@ app.post('/api/journal', authenticateUser, async (req, res) => {
         }
 
         res.json({ analysis, content });
-    } catch (error) {
-        console.error('Server error:', error.message);
-        res.status(500).json({ error: error.message || 'Server processing error' });
+    } catch (e) {
+        res.status(500).json({ error: e.message || 'Processing error' });
     }
 });
 
-// Guaranteed HTML Delivery using absolute stream
-app.get('*', (req, res) => {
-    const p1 = path.join(__dirname, 'public', 'index.html');
-    const p2 = path.join(__dirname, 'index.html');
+// Guaranteed HTML Delivery on root and every other route
+const serveIndexHtml = (req, res) => {
+    const candidates = [
+        path.join(__dirname, 'public', 'index.html'),
+        path.join(__dirname, 'index.html'),
+        path.resolve('public/index.html')
+    ];
 
-    if (fs.existsSync(p1)) {
-        res.sendFile(p1);
-    } else if (fs.existsSync(p2)) {
-        res.sendFile(p2);
-    } else {
-        res.sendFile(path.resolve('public/index.html'));
+    for (const p of candidates) {
+        if (fs.existsSync(p)) {
+            return res.sendFile(p);
+        }
     }
-});
 
-const PORT = process.env.PORT || 8080;
-app.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT}`));
+    // Fallback: Inline UI if file is somehow missing from container
+    res.type('html').send(`<!DOCTYPE html><html><head><title>Personal AI Journal</title><script src="https://cdn.tailwindcss.com"></script></head><body class="bg-slate-100 flex items-center justify-center min-h-screen p-4"><div class="bg-white p-8 rounded-2xl shadow max-w-lg w-full text-center"><h1 class="text-xl font-bold mb-2">Personal Gemini Journal</h1><p class="text-slate-500 text-sm">Server is Live and Connected.</p></div></body></html>`);
+};
+
+app.get('/', serveIndexHtml);
+app.use(express.static(path.join(__dirname, 'public')));
+app.get('*', serveIndexHtml);
+
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server actively running on port ${PORT}`);
+});
