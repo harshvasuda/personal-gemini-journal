@@ -8,8 +8,7 @@ app.use(express.json());
 app.use(cors());
 
 // Serve static assets
-const publicPath = path.resolve(__dirname, 'public');
-app.use(express.static(publicPath));
+app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.static(__dirname));
 
 // Safe Firebase Admin Init
@@ -25,7 +24,7 @@ try {
     db = admin.firestore();
     console.log('Firebase initialized successfully.');
 } catch (e) {
-    console.warn('Firebase Admin SDK init notice:', e.message);
+    console.warn('Firebase Admin SDK notice:', e.message);
 }
 
 // Token Verification Middleware
@@ -103,7 +102,6 @@ app.post('/api/journal', authenticateUser, async (req, res) => {
 
         const analysis = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Reflection generated successfully.';
 
-        // Isolated Database Write: /users/{userId}/journals/{journalId}
         if (db) {
             await db.collection('users').doc(req.user.uid).collection('journals').add({
                 content,
@@ -120,22 +118,19 @@ app.post('/api/journal', authenticateUser, async (req, res) => {
     }
 });
 
-// Root & Fallback HTML Serving
-function serveIndex(res) {
-    const publicIndex = path.join(publicPath, 'index.html');
-    const rootIndex = path.join(__dirname, 'index.html');
+// Guaranteed HTML Delivery using absolute stream
+app.get('*', (req, res) => {
+    const p1 = path.join(__dirname, 'public', 'index.html');
+    const p2 = path.join(__dirname, 'index.html');
 
-    if (fs.existsSync(publicIndex)) {
-        res.sendFile(publicIndex);
-    } else if (fs.existsSync(rootIndex)) {
-        res.sendFile(rootIndex);
+    if (fs.existsSync(p1)) {
+        res.sendFile(p1);
+    } else if (fs.existsSync(p2)) {
+        res.sendFile(p2);
     } else {
-        res.status(404).send('<h2>index.html not found. Please ensure public/index.html is committed.</h2>');
+        res.sendFile(path.resolve('public/index.html'));
     }
-}
-
-app.get('/', (req, res) => serveIndex(res));
-app.get('*', (req, res) => serveIndex(res));
+});
 
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT}`));
