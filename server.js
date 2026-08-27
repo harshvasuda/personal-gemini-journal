@@ -83,12 +83,12 @@ const HTML_BODY = `<!DOCTYPE html>
 
     <script>
         const firebaseConfig = {
-            apiKey: "AIzaSyDummyKey_ReplaceWithYourKey",
+            apiKey: "AIzaSyA0VWDhhJUQjIt1Zopd5tkYiRqfeQ5GqCtc",
             authDomain: "personal-gemini-journal-5b10e.firebaseapp.com",
             projectId: "personal-gemini-journal-5b10e",
-            storageBucket: "personal-gemini-journal-5b10e.appspot.com",
-            messagingSenderId: "367341257404",
-            appId: "1:367341257404:web:yourAppId"
+            storageBucket: "personal-gemini-journal-5b10e.firebasestorage.app",
+            messagingSenderId: "119125891280",
+            appId: "1:119125891280:web:e4df9025bf74e23d25e6d5"
         };
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
