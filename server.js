@@ -7,16 +7,11 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// Serve static frontend files from public folder
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Initialize Firebase Admin (Using ADC)
 admin.initializeApp();
 const db = admin.firestore();
 
-/**
- * JOURNAL ENTRY ENDPOINT (Direct Google Gemini REST API)
- */
 app.post('/api/journal', async (req, res) => {
     try {
         const { content } = req.body;
@@ -31,9 +26,9 @@ app.post('/api/journal', async (req, res) => {
 
         const promptText = `Analyze this journal entry in pure English. Provide a thoughtful, empathetic, and structured reflection: "${content}"`;
 
-        // Direct standard REST endpoint that supports this auth key format
+        // Updated to v1 endpoint
         const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+            `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
             {
                 method: 'POST',
                 headers: {
@@ -65,9 +60,6 @@ app.post('/api/journal', async (req, res) => {
     }
 });
 
-/**
- * Explicit Root and Fallback Routes
- */
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
