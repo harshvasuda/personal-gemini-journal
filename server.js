@@ -1,5 +1,4 @@
 const express = require('express');
-const { GoogleGenerativeAI } = require("@google/generative-ai");
 const admin = require('firebase-admin');
 const cors = require('cors');
 const path = require('path');
@@ -11,38 +10,12 @@ app.use(cors());
 // Serve static frontend files from public folder
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Initialize Firebase Admin (Using ADC - Application Default Credentials)
+// Initialize Firebase Admin (Using ADC)
 admin.initializeApp();
 const db = admin.firestore();
 
 /**
- * SECURE DIRECTIVE 1: Fetch API key from Environment Variables
- */
-async function getGeminiApiKey() {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-        throw new Error("GEMINI_API_KEY is not set in environment variables");
-    }
-    return apiKey;
-}
-
-/**
- * SECURE DIRECTIVE 2: Authentication Middleware
- */
-const authenticate = async (req, res, next) => {
-    const idToken = req.headers.authorization?.split('Bearer ')[1];
-    if (!idToken) return res.status(401).send('Unauthorized');
-    try {
-        const decodedToken = await admin.auth().verifyIdToken(idToken);
-        req.user = decodedToken;
-        next();
-    } catch (error) {
-        res.status(401).send('Invalid Token');
-    }
-};
-
-/**
- * JOURNAL ENTRY ENDPOINT (Connected with Frontend index.html)
+ * JOURNAL ENTRY ENDPOINT (Direct Google Gemini REST API)
  */
 app.post('/api/journal', async (req, res) => {
     try {
@@ -51,83 +24,44 @@ app.post('/api/journal', async (req, res) => {
             return res.status(400).json({ error: "Content is required" });
         }
 
-        const apiKey = await getGeminiApiKey();
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (!apiKey) {
+            return res.status(500).json({ error: "GEMINI_API_KEY is not configured on server" });
+        }
 
-        const prompt = `Analyze this journal entry in pure English. Provide a thoughtful, empathetic, well-structured reflection and actionable insights: "${content}"`;
-        const result = await model.generateContent(prompt);
-        const analysis = result.response.text();
+        const promptText = `Analyze this journal entry in pure English. Provide a thoughtful, empathetic, and structured reflection: "${content}"`;
 
+        // Direct standard REST endpoint that supports this auth key format
+        const response = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [{ text: promptText }]
+                    }]
+                })
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            console.error("Gemini API Error Detail:", JSON.stringify(data));
+            return res.status(response.status).json({ 
+                error: data.error?.message || "Failed to generate response from Gemini." 
+            });
+        }
+
+        const analysis = data.candidates?.[0]?.content?.parts?.[0]?.text || "No analysis generated.";
         res.json({ analysis });
+
     } catch (error) {
-        console.error("Journal Error:", error.message);
-        res.status(500).json({ error: "Failed to process journal entry." });
-    }
-});
-
-/**
- * MULTI-TURN CHAT & JOURNALING (Authenticated)
- */
-app.post('/api/chat', authenticate, async (req, res) => {
-    try {
-        const { message, history, sessionId } = req.body;
-        const apiKey = await getGeminiApiKey();
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
-        const chat = model.startChat({ history });
-        const result = await chat.sendMessage(message);
-        const response = await result.response.text();
-
-        const messageRef = db.collection('users').doc(req.user.uid)
-            .collection('sessions').doc(sessionId)
-            .collection('messages');
-
-        await messageRef.add({
-            role: 'user', 
-            content: message, 
-            timestamp: admin.firestore.FieldValue.serverTimestamp()
-        });
-        await messageRef.add({
-            role: 'model', 
-            content: response, 
-            timestamp: admin.firestore.FieldValue.serverTimestamp()
-        });
-
-        res.json({ response });
-    } catch (error) {
-        console.error("Internal Error:", error.message);
-        res.status(500).json({ error: "Failed to process journal entry." });
-    }
-});
-
-/**
- * AI Mood Summarization & Analytics (Authenticated)
- */
-app.get('/api/analytics/mood-summary', authenticate, async (req, res) => {
-    try {
-        const apiKey = await getGeminiApiKey();
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
-        const snapshot = await db.collection('users').doc(req.user.uid)
-            .collection('sessions').orderBy('timestamp', 'desc').limit(10).get();
-
-        const logs = snapshot.docs.map(doc => doc.data().lastMessage).join(". ");
-
-        const prompt = `Analyze the following journal entries in English and provide a JSON response with: 
-        1. dominant_mood (string) 
-        2. mood_score (1-10) 
-        3. weekly_summary (brief paragraph). Entries: ${logs}`;
-
-        const result = await model.generateContent(prompt);
-        const analytics = JSON.parse(result.response.text());
-
-        res.json(analytics);
-    } catch (error) {
-        console.error("Mood Analytics Error:", error.message);
-        res.status(500).json({ error: "Mood analysis failed." });
+        console.error("Server Error:", error.message);
+        res.status(500).json({ error: error.message || "Failed to process journal entry." });
     }
 });
 
