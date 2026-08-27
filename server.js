@@ -3,15 +3,14 @@ const { SecretManagerServiceClient } = require('@google-cloud/secret-manager');
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const admin = require('firebase-admin');
 const cors = require('cors');
+const path = require('path');
 
 const app = express();
 app.use(express.json());
 app.use(cors());
-const path = require('path');
 
-// Is line se replace kar do:
+// Serve static frontend files from public folder
 app.use(express.static(path.join(__dirname, 'public')));
-// <-- Yeh line add kar di hai taaki frontend direct load ho
 
 // Initialize Firebase Admin (Using ADC - Application Default Credentials)
 admin.initializeApp();
@@ -133,6 +132,13 @@ app.get('/api/analytics/mood-summary', authenticate, async (req, res) => {
         console.error("Mood Analytics Error:", error.message);
         res.status(500).json({ error: "Mood analysis failed." });
     }
+});
+
+/**
+ * FALLBACK ROUTE: Serve index.html for any unknown routes
+ */
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 const PORT = process.env.PORT || 8080;
