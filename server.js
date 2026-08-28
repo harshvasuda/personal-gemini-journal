@@ -40,7 +40,7 @@ async function authenticateUser(req, res, next) {
     next();
 }
 
-// Complete Embedded HTML UI
+// Complete Embedded HTML UI with Verified Browser Key
 const HTML_BODY = `<!DOCTYPE html>
 <html lang="en">
 <head>
