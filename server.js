@@ -83,7 +83,7 @@ const HTML_BODY = `<!DOCTYPE html>
 
     <script>
         const firebaseConfig = {
-            apiKey: "AIzaSyA0VWDhhJUQjIt1Zopd5tkYiRqfeQ5GqCtc",
+            apiKey: "AIzaSyA0VmihJJGJltiZopd5tkYiRqfeQSgqCtc",
             authDomain: "personal-gemini-journal-5b10e.firebaseapp.com",
             projectId: "personal-gemini-journal-5b10e",
             storageBucket: "personal-gemini-journal-5b10e.firebasestorage.app",
