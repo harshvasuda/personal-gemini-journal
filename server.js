@@ -1,6 +1,5 @@
 const express = require('express');
 const cors = require('cors');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const app = express();
 app.use(express.json());
@@ -167,49 +166,59 @@ app.get('/health', (req, res) => {
     res.status(200).send('OK');
 });
 
-// API Journal Route with multi-model auto-fallback
+// Resilient API Journal Route
 app.post('/api/journal', authenticateUser, async (req, res) => {
     try {
         const { content } = req.body;
         if (!content) return res.status(400).json({ error: 'Content is required' });
 
-        const apiKey = process.env.GEMINI_API_KEY;
-        if (!apiKey) return res.status(500).json({ error: 'GEMINI_API_KEY environment variable is not configured' });
+        const apiKey = process.env.GEMINI_API_KEY ? process.env.GEMINI_API_KEY.trim() : null;
+        if (!apiKey) return res.status(500).json({ error: 'GEMINI_API_KEY is not set' });
 
-        const genAI = new GoogleGenerativeAI(apiKey);
-
-        const prompt = `You are an empathetic, insightful personal reflection coach. Please reflect on this journal entry:
+        const promptText = `You are an empathetic AI journal coach. Reflect constructively on this journal entry:
 "${content}"
 
-Provide a clean and structured response:
+Provide:
 🌿 Empathetic Summary:
-💡 Constructive Insight:
-🎯 Gentle Actionable Takeaway:`;
+💡 Insight:
+🎯 Actionable Takeaway:`;
 
-        const candidateModels = [
-            'gemini-1.5-flash-latest',
-            'gemini-1.5-flash',
-            'gemini-1.5-pro',
-            'gemini-pro'
+        const requestBody = {
+            contents: [{
+                parts: [{ text: promptText }]
+            }]
+        };
+
+        const endpoints = [
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+            `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${apiKey}`
         ];
 
         let analysis = null;
-        let lastError = null;
+        let lastErrorText = null;
 
-        for (const modelName of candidateModels) {
+        for (const url of endpoints) {
             try {
-                const model = genAI.getGenerativeModel({ model: modelName });
-                const result = await model.generateContent(prompt);
-                analysis = result.response.text();
-                if (analysis) break;
+                const resp = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestBody)
+                });
+                const data = await resp.json();
+                if (resp.ok && data?.candidates?.[0]?.content?.parts?.[0]?.text) {
+                    analysis = data.candidates[0].content.parts[0].text;
+                    break;
+                } else {
+                    lastErrorText = data?.error?.message || JSON.stringify(data);
+                }
             } catch (err) {
-                lastError = err;
-                console.warn(`Model ${modelName} failed, attempting next available model...`);
+                lastErrorText = err.message;
             }
         }
 
         if (!analysis) {
-            throw lastError || new Error('All model candidates failed to generate content');
+            return res.status(500).json({ error: lastErrorText || 'Failed to generate response from Gemini API.' });
         }
 
         if (db) {
@@ -227,7 +236,7 @@ Provide a clean and structured response:
 
         res.json({ analysis, content });
     } catch (e) {
-        console.error('Gemini processing error:', e);
+        console.error('Processing error:', e);
         res.status(500).json({ error: e.message || 'Processing error' });
     }
 });
