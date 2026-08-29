@@ -41,7 +41,7 @@ async function authenticateUser(req, res, next) {
     next();
 }
 
-// Complete Embedded HTML UI with Verified Browser Key
+// Complete Embedded HTML UI
 const HTML_BODY = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -167,21 +167,50 @@ app.get('/health', (req, res) => {
     res.status(200).send('OK');
 });
 
-// API Journal Route (Powered by Google Generative AI SDK)
+// API Journal Route with multi-model auto-fallback
 app.post('/api/journal', authenticateUser, async (req, res) => {
     try {
         const { content } = req.body;
         if (!content) return res.status(400).json({ error: 'Content is required' });
 
         const apiKey = process.env.GEMINI_API_KEY;
-        if (!apiKey) return res.status(500).json({ error: 'GEMINI_API_KEY environment variable is missing' });
+        if (!apiKey) return res.status(500).json({ error: 'GEMINI_API_KEY environment variable is not configured' });
 
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
-        const prompt = `Analyze this journal entry in English. Provide an empathetic, constructive and structured reflection:\n\n"${content}"`;
-        const result = await model.generateContent(prompt);
-        const analysis = result.response.text();
+        const prompt = `You are an empathetic, insightful personal reflection coach. Please reflect on this journal entry:
+"${content}"
+
+Provide a clean and structured response:
+🌿 Empathetic Summary:
+💡 Constructive Insight:
+🎯 Gentle Actionable Takeaway:`;
+
+        const candidateModels = [
+            'gemini-1.5-flash-latest',
+            'gemini-1.5-flash',
+            'gemini-1.5-pro',
+            'gemini-pro'
+        ];
+
+        let analysis = null;
+        let lastError = null;
+
+        for (const modelName of candidateModels) {
+            try {
+                const model = genAI.getGenerativeModel({ model: modelName });
+                const result = await model.generateContent(prompt);
+                analysis = result.response.text();
+                if (analysis) break;
+            } catch (err) {
+                lastError = err;
+                console.warn(`Model ${modelName} failed, attempting next available model...`);
+            }
+        }
+
+        if (!analysis) {
+            throw lastError || new Error('All model candidates failed to generate content');
+        }
 
         if (db) {
             try {
@@ -198,7 +227,7 @@ app.post('/api/journal', authenticateUser, async (req, res) => {
 
         res.json({ analysis, content });
     } catch (e) {
-        console.error('Gemini error:', e);
+        console.error('Gemini processing error:', e);
         res.status(500).json({ error: e.message || 'Processing error' });
     }
 });
