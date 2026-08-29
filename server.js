@@ -1,6 +1,5 @@
 const express = require('express');
 const cors = require('cors');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const app = express();
 app.use(express.json());
@@ -146,7 +145,7 @@ const HTML_BODY = `<!DOCTYPE html>
                     body: JSON.stringify({ content: text })
                 });
                 const data = await res.json();
-                outputContent.innerText = data.analysis || JSON.stringify(data);
+                outputContent.innerText = data.analysis || (data.error ? 'Error: ' + data.error : JSON.stringify(data));
                 input.value = '';
             } catch (e) {
                 outputContent.innerText = 'Error: ' + e.message;
@@ -167,7 +166,7 @@ app.get('/health', (req, res) => {
     res.status(200).send('OK');
 });
 
-// API Journal Route
+// API Journal Route (Direct Reliable REST Call)
 app.post('/api/journal', authenticateUser, async (req, res) => {
     try {
         const { content } = req.body;
@@ -176,12 +175,30 @@ app.post('/api/journal', authenticateUser, async (req, res) => {
         const apiKey = process.env.GEMINI_API_KEY;
         if (!apiKey) return res.status(500).json({ error: 'GEMINI_API_KEY is not set' });
 
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        const prompt = `Analyze this journal entry in English. Provide an empathetic, constructive and structured reflection:\n\n"${content}"`;
 
-        const prompt = `Analyze this journal entry in English. Provide an empathetic and structured reflection:\n\n"${content}"`;
-        const result = await model.generateContent(prompt);
-        const analysis = result.response.text();
+        // Direct v1 generateContent endpoint
+        const response = await fetch(
+            `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [{ text: prompt }]
+                    }]
+                })
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            console.error('Gemini API Error details:', data);
+            return res.status(response.status).json({ error: data.error?.message || 'Gemini API Error' });
+        }
+
+        const analysis = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No reflection generated.';
 
         if (db) {
             try {
@@ -198,6 +215,7 @@ app.post('/api/journal', authenticateUser, async (req, res) => {
 
         res.json({ analysis, content });
     } catch (e) {
+        console.error('Processing error:', e);
         res.status(500).json({ error: e.message || 'Processing error' });
     }
 });
