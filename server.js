@@ -76,14 +76,14 @@ const HTML_BODY = `<!DOCTYPE html>
         </div>
 
         <div id="outputContainer" class="hidden mt-6 pt-5 border-t border-slate-100 space-y-2">
-            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Gemini 3.6 Flash Reflection</h3>
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Gemini AI Reflection</h3>
             <div id="outputContent" class="bg-slate-50 p-4 rounded-xl text-sm leading-relaxed border border-slate-200 text-slate-700 whitespace-pre-wrap"></div>
         </div>
     </div>
 
     <script>
         const firebaseConfig = {
-            apiKey: "AIzaSyA0VmihJJGJltiZopd5tkYiRqfeQSgqCtc",
+            apiKey: "AIzaSyBRzYlz6j9Viv4PqToBxqGxrygFXjcmybQ",
             authDomain: "personal-gemini-journal-5b10e.firebaseapp.com",
             projectId: "personal-gemini-journal-5b10e",
             storageBucket: "personal-gemini-journal-5b10e.firebasestorage.app",
@@ -166,7 +166,7 @@ app.get('/health', (req, res) => {
     res.status(200).send('OK');
 });
 
-// API Journal Route (Supports Header & Param Authentication)
+// API Journal Route
 app.post('/api/journal', authenticateUser, async (req, res) => {
     try {
         const { content } = req.body;
@@ -178,13 +178,11 @@ app.post('/api/journal', authenticateUser, async (req, res) => {
         const prompt = `Analyze this journal entry in English. Provide an empathetic and structured reflection:\n\n"${content}"`;
         
         const response = await fetch(
-            'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent',
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
             {
                 method: 'POST',
                 headers: { 
-                    'Content-Type': 'application/json',
-                    'x-goog-api-key': apiKey,
-                    'Authorization': `Bearer ${apiKey}`
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
             }
@@ -196,12 +194,16 @@ app.post('/api/journal', authenticateUser, async (req, res) => {
         const analysis = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Reflection generated.';
 
         if (db) {
-            await db.collection('users').doc(req.user.uid).collection('journals').add({
-                content,
-                analysis,
-                timestamp: new Date().toISOString(),
-                userId: req.user.uid
-            });
+            try {
+                await db.collection('users').doc(req.user.uid).collection('journals').add({
+                    content,
+                    analysis,
+                    timestamp: new Date().toISOString(),
+                    userId: req.user.uid
+                });
+            } catch (dbErr) {
+                console.warn('Firestore write notice:', dbErr.message);
+            }
         }
 
         res.json({ analysis, content });

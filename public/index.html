@@ -298,7 +298,7 @@
 
     <script>
         const firebaseConfig = {
-            apiKey: "AIzaSyA0VmihJJGJltiZopd5tkYiRqfeQSgqCtc",
+            apiKey: "AIzaSyBRzYlz6j9Viv4PqToBxqGxrygFXjcmybQ",
             authDomain: "personal-gemini-journal-5b10e.firebaseapp.com",
             projectId: "personal-gemini-journal-5b10e",
             storageBucket: "personal-gemini-journal-5b10e.firebasestorage.app",
@@ -380,6 +380,7 @@
 
                 if (response.ok) {
                     output.innerText = data.analysis || JSON.stringify(data);
+                    input.value = '';
                 } else {
                     output.innerText = 'Error: ' + (data.error || 'Something went wrong while processing.');
                 }
