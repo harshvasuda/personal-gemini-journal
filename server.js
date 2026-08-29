@@ -166,7 +166,7 @@ app.get('/health', (req, res) => {
     res.status(200).send('OK');
 });
 
-// Dynamic Discovery Journal Route
+// Direct target for gemini-3.6-flash
 app.post('/api/journal', authenticateUser, async (req, res) => {
     try {
         const { content } = req.body;
@@ -175,49 +175,26 @@ app.post('/api/journal', authenticateUser, async (req, res) => {
         const apiKey = process.env.GEMINI_API_KEY ? process.env.GEMINI_API_KEY.trim() : null;
         if (!apiKey) return res.status(500).json({ error: 'GEMINI_API_KEY is not set' });
 
-        const prompt = `You are an empathetic, insightful personal reflection coach. Please analyze this journal entry:
+        const promptText = `You are an empathetic, insightful personal reflection coach. Analyze this journal entry:
 "${content}"
 
 Provide a warm, structured reflection:
 🌿 Empathetic Summary:
-💡 Constructive Insight:
+💡 Insight:
 🎯 Actionable Takeaway:`;
 
         const requestBody = {
-            contents: [{ parts: [{ text: prompt }] }]
+            contents: [{ parts: [{ text: promptText }] }]
         };
 
-        // Step 1: Discover available generateContent models for this API key
-        let targetModel = 'models/gemini-1.5-flash';
-        try {
-            const listRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
-            if (listRes.ok) {
-                const listData = await listRes.json();
-                const models = listData.models || [];
-                const supported = models.filter(m => m.supportedGenerationMethods && m.supportedGenerationMethods.includes('generateContent'));
-                
-                const flashModel = supported.find(m => m.name.includes('flash'));
-                const proModel = supported.find(m => m.name.includes('pro'));
-                const anyModel = supported[0];
-
-                if (flashModel) targetModel = flashModel.name;
-                else if (proModel) targetModel = proModel.name;
-                else if (anyModel) targetModel = anyModel.name;
+        const response = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`,
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestBody)
             }
-        } catch (discoveryErr) {
-            console.warn('Model discovery fallback:', discoveryErr.message);
-        }
-
-        // Clean model name formatting if needed
-        const cleanModelName = targetModel.startsWith('models/') ? targetModel.replace('models/', '') : targetModel;
-
-        // Step 2: Call generateContent with the discovered model
-        const generateUrl = `https://generativelanguage.googleapis.com/v1beta/models/${cleanModelName}:generateContent?key=${apiKey}`;
-        const response = await fetch(generateUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(requestBody)
-        });
+        );
 
         const data = await response.json();
 
@@ -227,7 +204,7 @@ Provide a warm, structured reflection:
 
         const analysis = data?.candidates?.[0]?.content?.parts?.[0]?.text;
         if (!analysis) {
-            return res.status(500).json({ error: 'No response text returned from Gemini API' });
+            return res.status(500).json({ error: 'No reflection generated' });
         }
 
         if (db) {
