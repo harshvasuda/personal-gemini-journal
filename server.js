@@ -40,13 +40,13 @@ async function authenticateUser(req, res, next) {
     next();
 }
 
-// Modern Dark UI with Past Entries & Sentiment Tracker
+// Complete Enhanced Modern UI
 const HTML_BODY = `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Personal Gemini Journal - Secure AI Vault</title>
+    <title>Personal Gemini Journal | Secure AI Vault</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
@@ -55,25 +55,28 @@ const HTML_BODY = `<!DOCTYPE html>
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
     </style>
 </head>
-<body class="bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-950 min-h-screen py-10 px-4 text-slate-100 antialiased flex flex-col items-center justify-start">
-    <div class="max-w-2xl w-full bg-slate-900/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-slate-700/60 p-6 md:p-8 space-y-6">
+<body class="bg-[#0b0f19] bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.2),rgba(255,255,255,0))] min-h-screen py-8 px-4 text-slate-100 flex flex-col items-center justify-start antialiased">
+    <div class="max-w-2xl w-full bg-slate-900/90 backdrop-blur-2xl rounded-3xl shadow-[0_0_50px_-12px_rgba(79,70,229,0.25)] border border-slate-800 p-6 md:p-8 space-y-6">
         
-        <!-- Top Bar -->
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-800">
+        <!-- Header -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-800/80">
             <div>
                 <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-xs font-semibold mb-2">
                     <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                    <span>Gemini 3.6 Flash Active</span>
+                    <span>Resilient Gemini Flash Engine</span>
                 </div>
-                <h1 class="text-2xl font-extrabold tracking-tight text-white">Personal Gemini Journal</h1>
+                <h1 class="text-2xl font-extrabold tracking-tight text-white flex items-center gap-2">
+                    Personal Gemini Journal
+                </h1>
                 <p class="text-xs text-slate-400 mt-0.5">Isolated Cloud Firestore Vault &bull; Zero Cross-User Leakage</p>
             </div>
             
             <div id="authSection" class="flex items-center">
-                <button id="loginBtn" onclick="signIn()" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-lg shadow-indigo-500/20 transition duration-200">
+                <button id="loginBtn" onclick="signIn()" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-500 via-purple-600 to-indigo-600 hover:opacity-90 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-lg shadow-indigo-500/25 transition duration-200">
+                    <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12.24 10.285V14.4h6.806c-.275 1.765-2.056 5.174-6.806 5.174-4.095 0-7.439-3.389-7.439-7.574s3.344-7.574 7.439-7.574c2.33 0 3.891.989 4.785 1.849l3.254-3.138C18.189 1.186 15.479 0 12.24 0c-6.635 0-12 5.365-12 12s5.365 12 12 12c6.926 0 11.52-4.869 11.52-11.726 0-.788-.085-1.39-.189-1.989H12.24z"/></svg>
                     <span>Sign In with Google</span>
                 </button>
-                <div id="userInfo" class="hidden items-center gap-3 bg-slate-800/80 px-3.5 py-1.5 rounded-2xl border border-slate-700">
+                <div id="userInfo" class="hidden items-center gap-3 bg-slate-800/80 px-3.5 py-1.5 rounded-2xl border border-slate-700/80 shadow-inner">
                     <div class="w-2 h-2 rounded-full bg-emerald-400"></div>
                     <span id="userEmail" class="text-xs font-semibold text-slate-200 truncate max-w-[150px]"></span>
                     <button onclick="signOut()" class="text-xs text-rose-400 hover:text-rose-300 transition font-medium">Logout</button>
@@ -81,29 +84,29 @@ const HTML_BODY = `<!DOCTYPE html>
             </div>
         </div>
 
-        <!-- Reflection Form -->
+        <!-- Input Area -->
         <div class="space-y-3">
             <div class="flex items-center justify-between">
                 <label for="journalInput" class="block text-xs font-semibold uppercase tracking-wider text-slate-400">Today's Reflection</label>
-                <span class="text-[11px] text-indigo-400 font-medium">Phase 3: Mood & Insights Enabled</span>
+                <span class="text-[11px] bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-2 py-0.5 rounded-full font-medium">Phase 3: Mood & Insights</span>
             </div>
-            <textarea id="journalInput" rows="4" placeholder="How was your day? Write down your thoughts, challenges, or milestones..." class="w-full bg-slate-950/70 border border-slate-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 rounded-2xl p-4 text-sm text-slate-100 placeholder-slate-500 focus:outline-none transition resize-none leading-relaxed"></textarea>
+            <textarea id="journalInput" rows="4" placeholder="How was your day? Write down your thoughts, challenges, or milestones..." class="w-full bg-slate-950/80 border border-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 rounded-2xl p-4 text-sm text-slate-100 placeholder-slate-500 focus:outline-none transition resize-none leading-relaxed shadow-inner"></textarea>
             
-            <button id="submitBtn" onclick="submitEntry()" class="w-full bg-gradient-to-r from-indigo-500 via-indigo-600 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold text-sm py-3.5 rounded-2xl shadow-xl shadow-indigo-600/25 transition duration-200 flex items-center justify-center gap-2">
+            <button id="submitBtn" onclick="submitEntry()" class="w-full bg-gradient-to-r from-indigo-500 via-purple-600 to-indigo-600 hover:opacity-95 text-white font-bold text-sm py-3.5 rounded-2xl shadow-xl shadow-indigo-600/20 transition duration-200 flex items-center justify-center gap-2 cursor-pointer">
                 <span id="btnText">Analyze & Securely Save Entry</span>
             </button>
         </div>
 
-        <!-- AI Output -->
+        <!-- AI Output Display -->
         <div id="outputContainer" class="hidden pt-2 space-y-3">
             <div class="flex items-center justify-between">
                 <h3 class="text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-2">
                     <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
-                    Gemini AI Reflection
+                    Gemini AI Reflection & Mood Analysis
                 </h3>
                 <span class="text-[10px] bg-slate-800 text-slate-400 px-2.5 py-0.5 rounded-md border border-slate-700">Encrypted in Firestore</span>
             </div>
-            <div id="outputContent" class="bg-slate-950/80 p-5 rounded-2xl text-sm leading-relaxed border border-slate-800 text-slate-200 whitespace-pre-wrap shadow-inner font-sans"></div>
+            <div id="outputContent" class="bg-slate-950/90 p-5 rounded-2xl text-sm leading-relaxed border border-slate-800 text-slate-200 whitespace-pre-wrap shadow-inner font-sans"></div>
         </div>
 
         <!-- Past Entries History -->
@@ -115,7 +118,7 @@ const HTML_BODY = `<!DOCTYPE html>
             <div id="historyList" class="space-y-3 max-h-64 overflow-y-auto pr-1"></div>
         </div>
 
-        <!-- Footer -->
+        <!-- Footer Directives -->
         <div class="pt-4 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
             <span class="flex items-center gap-1.5">
                 <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
@@ -185,12 +188,13 @@ const HTML_BODY = `<!DOCTYPE html>
                 const data = await res.json();
                 if (data.entries && data.entries.length > 0) {
                     list.innerHTML = data.entries.map(e => \`
-                        <div class="bg-slate-950/60 p-3.5 rounded-xl border border-slate-800 text-xs space-y-1.5">
-                            <div class="flex justify-between text-slate-400 font-mono text-[10px]">
+                        <div class="bg-slate-950/70 p-4 rounded-xl border border-slate-800 text-xs space-y-2">
+                            <div class="flex justify-between items-center text-slate-400 font-mono text-[10px]">
                                 <span>\${new Date(e.timestamp).toLocaleString()}</span>
+                                <span class="text-indigo-400 font-semibold">Persisted Entry</span>
                             </div>
-                            <p class="text-slate-300 font-medium">\${e.content}</p>
-                            <p class="text-indigo-300/90 whitespace-pre-wrap pl-2 border-l-2 border-indigo-500/40 text-[11px]">\${e.analysis}</p>
+                            <p class="text-slate-200 font-medium bg-slate-900/60 p-2.5 rounded-lg border border-slate-800/60">\${e.content}</p>
+                            <div class="text-indigo-200/90 whitespace-pre-wrap pl-3 border-l-2 border-indigo-500/50 text-[11px] leading-relaxed">\${e.analysis}</div>
                         </div>
                     \`).join('');
                 } else {
@@ -216,9 +220,9 @@ const HTML_BODY = `<!DOCTYPE html>
             const outputContent = document.getElementById('outputContent');
 
             btn.disabled = true;
-            btnText.innerText = 'Analyzing with Gemini 3.6 Flash...';
+            btnText.innerText = 'Analyzing with Gemini Fallback Ladder...';
             outputContainer.classList.remove('hidden');
-            outputContent.innerHTML = '<span class="text-slate-400 italic animate-pulse">Generating your empathetic reflection...</span>';
+            outputContent.innerHTML = '<span class="text-slate-400 italic animate-pulse">Consulting resilient Gemini model ladder...</span>';
 
             try {
                 const token = await currentUser.getIdToken();
@@ -265,7 +269,7 @@ app.get('/api/history', authenticateUser, async (req, res) => {
     }
 });
 
-// Direct target for gemini-3.6-flash with Tone & Sentiment Analysis
+// Resilient Fallback Ladder Route
 app.post('/api/journal', authenticateUser, async (req, res) => {
     try {
         const { content } = req.body;
@@ -278,7 +282,7 @@ app.post('/api/journal', authenticateUser, async (req, res) => {
 "${content}"
 
 Provide a structured, warm reflection:
-🎭 Mood Tone: [e.g., Optimistic, Reflective, Stressed, Motivated]
+🎭 Mood Tone: [e.g., Motivated, Productive, Reflective, Focused]
 🌿 Empathetic Summary:
 💡 Constructive Insight:
 🎯 Actionable Takeaway:`;
@@ -287,24 +291,44 @@ Provide a structured, warm reflection:
             contents: [{ parts: [{ text: promptText }] }]
         };
 
-        const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`,
-            {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(requestBody)
+        // Fallback sequence: try alternative available flash versions if one hits spike capacity
+        const fallbackLadder = [
+            'gemini-2.5-flash',
+            'gemini-2.5-flash-lite',
+            'gemini-1.5-flash',
+            'gemini-3.6-flash',
+            'gemini-1.5-pro'
+        ];
+
+        let analysis = null;
+        let lastErrorText = null;
+
+        for (const model of fallbackLadder) {
+            try {
+                const response = await fetch(
+                    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(requestBody)
+                    }
+                );
+
+                const data = await response.json();
+
+                if (response.ok && data?.candidates?.[0]?.content?.parts?.[0]?.text) {
+                    analysis = data.candidates[0].content.parts[0].text;
+                    break;
+                } else {
+                    lastErrorText = data?.error?.message || JSON.stringify(data);
+                }
+            } catch (networkErr) {
+                lastErrorText = networkErr.message;
             }
-        );
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            return res.status(response.status).json({ error: data.error?.message || JSON.stringify(data) });
         }
 
-        const analysis = data?.candidates?.[0]?.content?.parts?.[0]?.text;
         if (!analysis) {
-            return res.status(500).json({ error: 'No reflection generated' });
+            return res.status(500).json({ error: lastErrorText || 'High server demand across all tiers. Please retry.' });
         }
 
         if (db) {
