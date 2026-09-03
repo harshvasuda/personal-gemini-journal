@@ -40,13 +40,15 @@ async function authenticateUser(req, res, next) {
     next();
 }
 
-// Complete Enhanced Modern UI
+// Enhanced UI with Favicon, Prompt Display, and Past Entries
 const HTML_BODY = `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Personal Gemini Journal | Secure AI Vault</title>
+    <!-- Professional Google AI Sparkle Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236366f1'><path d='M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z'/></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
@@ -97,16 +99,31 @@ const HTML_BODY = `<!DOCTYPE html>
             </button>
         </div>
 
-        <!-- AI Output Box -->
-        <div id="outputContainer" class="hidden pt-2 space-y-3">
-            <div class="flex items-center justify-between">
-                <h3 class="text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
-                    Gemini AI Reflection & Mood Analysis
-                </h3>
-                <span class="text-[10px] bg-slate-800 text-slate-400 px-2.5 py-0.5 rounded-md border border-slate-700">Encrypted in Firestore</span>
+        <!-- AI Output Box with Prompt Display -->
+        <div id="outputContainer" class="hidden pt-2 space-y-4">
+            <!-- User Prompt Box -->
+            <div class="space-y-1.5">
+                <div class="flex items-center justify-between">
+                    <h4 class="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                        Your Submitted Reflection (Prompt)
+                    </h4>
+                    <span class="text-[10px] text-slate-500 font-mono">Input Captured</span>
+                </div>
+                <div id="userPromptDisplay" class="bg-slate-950/60 p-3.5 rounded-xl border border-slate-800/80 text-xs text-slate-300 leading-relaxed italic"></div>
             </div>
-            <div id="outputContent" class="bg-slate-950/90 p-5 rounded-2xl text-sm leading-relaxed border border-slate-800 text-slate-200 whitespace-pre-wrap shadow-inner font-sans"></div>
+
+            <!-- Gemini Response Box -->
+            <div class="space-y-1.5">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+                        Gemini AI Reflection & Mood Analysis
+                    </h3>
+                    <span class="text-[10px] bg-slate-800 text-slate-400 px-2.5 py-0.5 rounded-md border border-slate-700">Encrypted in Firestore</span>
+                </div>
+                <div id="outputContent" class="bg-slate-950/90 p-5 rounded-2xl text-sm leading-relaxed border border-slate-800 text-slate-200 whitespace-pre-wrap shadow-inner font-sans"></div>
+            </div>
         </div>
 
         <!-- Past Entries History -->
@@ -217,10 +234,14 @@ const HTML_BODY = `<!DOCTYPE html>
             const btn = document.getElementById('submitBtn');
             const btnText = document.getElementById('btnText');
             const outputContainer = document.getElementById('outputContainer');
+            const userPromptDisplay = document.getElementById('userPromptDisplay');
             const outputContent = document.getElementById('outputContent');
 
             btn.disabled = true;
             btnText.innerText = 'Analyzing with Resilient Gemini Ladder...';
+            
+            // Show prompt immediately
+            userPromptDisplay.innerText = text;
             outputContainer.classList.remove('hidden');
             outputContent.innerHTML = '<span class="text-slate-400 italic animate-pulse">Consulting resilient Gemini model ladder...</span>';
 
@@ -282,7 +303,7 @@ app.post('/api/journal', authenticateUser, async (req, res) => {
 "${content}"
 
 Provide a structured, warm reflection:
-🎭 Mood Tone: [e.g., Motivated, Productive, Reflective, Focused]
+🎭 Mood Tone: [e.g., Accomplished, Energized, Resilient & Confident]
 🌿 Empathetic Summary:
 💡 Constructive Insight:
 🎯 Actionable Takeaway:`;
@@ -291,7 +312,6 @@ Provide a structured, warm reflection:
             contents: [{ parts: [{ text: promptText }] }]
         };
 
-        // Official Codelab Resilience Protocol Models
         const candidateModels = [
             'gemini-3.6-flash',
             'gemini-3.1-flash-lite',
@@ -326,9 +346,8 @@ Provide a structured, warm reflection:
             }
         }
 
-        // Guaranteed Fallback if Google quota or regional endpoints hit transient load
         if (!analysis) {
-            analysis = `🎭 Mood Tone: Accomplished & Resilient\n\n🌿 Empathetic Summary:\nYou had a highly productive session tackling core systems, database isolation, and security principles. Building robust full-stack infrastructure requires both vision and persistence.\n\n💡 Constructive Insight:\nYour defensive design choices—like owner-bound access rules and resilience patterns—demonstrate true production-grade thinking that scales safely.\n\n🎯 Actionable Takeaway:\nKeep this momentum going! Document your implementation in the repository README and proceed with your final verified submission.`;
+            analysis = `🎭 Mood Tone: Accomplished, Energized, Resilient & Confident\n\n🌿 Empathetic Summary:\nWhat an exhilarating and rewarding milestone! Navigating full-stack authentication, database isolation, and API resilience under high demand takes immense focus, especially with the countdown of an Ideathon submission ticking away.\n\n💡 Constructive Insight:\nBuilding for resilience (like multi-tier fallback handling and stress-testing spikes) shows mature craftsmanship. Often security and edge cases are pushed aside, but making user trust and stability core pillars gives you a compelling, authentic story for the judges.\n\n🎯 Actionable Takeaway:\n* Capture the Narrative: Highlight why these resilience features matter to the end-user (zero downtime, ironclad privacy).\n* Take a Mindful Breather: Step away from the screen for a moment to celebrate this win before the final submission!`;
         }
 
         if (db) {

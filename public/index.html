@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Personal AI Journal</title>
+    <!-- Professional Google AI Sparkle Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%234f46e5'><path d='M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z'/></svg>">
+    
     <!-- Modern Typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -197,13 +200,31 @@
             display: none;
         }
 
+        .prompt-box {
+            margin-bottom: 1.25rem;
+        }
+
         .response-header {
-            font-size: 0.875rem;
-            font-weight: 600;
+            font-size: 0.8rem;
+            font-weight: 700;
             color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            margin-bottom: 0.75rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .prompt-content {
+            background-color: #f1f5f9;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 0.875rem 1rem;
+            color: #334155;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            font-style: italic;
         }
 
         .response-content {
@@ -291,7 +312,20 @@
         </div>
 
         <div class="response-container" id="responseContainer">
-            <div class="response-header">AI Reflection & Summary</div>
+            <!-- User Prompt Box -->
+            <div class="prompt-box">
+                <div class="response-header">
+                    <span>Your Submitted Reflection (Prompt)</span>
+                    <span style="font-size: 0.7rem; color: #94a3b8; text-transform: none;">Captured Input</span>
+                </div>
+                <div class="prompt-content" id="promptDisplay"></div>
+            </div>
+
+            <!-- Gemini Response Box -->
+            <div class="response-header">
+                <span>Gemini AI Reflection & Insights</span>
+                <span style="font-size: 0.7rem; color: var(--primary); text-transform: none;">Encrypted in Firestore</span>
+            </div>
             <div class="response-content" id="responseOutput"></div>
         </div>
     </div>
@@ -348,6 +382,7 @@
 
             const input = document.getElementById('journalInput');
             const output = document.getElementById('responseOutput');
+            const promptDisplay = document.getElementById('promptDisplay');
             const container = document.getElementById('responseContainer');
             const submitBtn = document.getElementById('submitBtn');
             const btnText = document.getElementById('btnText');
@@ -362,6 +397,9 @@
             submitBtn.disabled = true;
             btnText.innerText = 'Analyzing...';
             spinner.style.display = 'block';
+            
+            // Set prompt text and show container
+            promptDisplay.innerText = text;
             container.style.display = 'block';
             output.innerText = 'Reflecting on your entry and saving to secure cloud vault...';
 
